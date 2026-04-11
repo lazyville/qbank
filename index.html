@@ -159,14 +159,14 @@
             downloadQuestionsFromGithub().then(newQuestions => {
                 questions.push(...newQuestions);
                 console.log(`Downloaded ${newQuestions.length} questions from GitHub.`);
-                document.getElementById('github-path').classList.toggle('hidden')
+                toggleGithubPathInput();
 
             }).catch(error => {
                 console.error('Error downloading questions:', error);
             });
         }
 
-        function showGithubPathInput() {
+        function toggleGithubPathInput() {
             document.getElementById('github-path').classList.toggle('hidden');
             document.getElementById("question-list-toggle").classList.toggle('hidden');
         }
@@ -201,7 +201,7 @@
         </button>
         <button id="question-dropdown-toggle"
             class="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600"
-            onclick="showGithubPathInput()">
+            onclick="toggleGithubPathInput()">
             🔗
         </button>
         <!-- Text box to take github path, default hidden, shows on click of questions dropdown -->
