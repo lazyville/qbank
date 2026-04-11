@@ -150,7 +150,7 @@
         }
 
         function downloadQuestionsFromGithub() {
-            return fetch('https://raw.githubusercontent.com/puter-ai/puter/main/questions.txt')
+            return fetch(document.getElementById('github-path').value)
                 .then(response => response.text())
                 .then(text => text.split('\n').filter(line => line.trim() !== ''));
         }
