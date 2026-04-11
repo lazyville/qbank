@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.13.0/lottie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+        @theme {
+        --color-clifford: #da373d;
+      }
+      
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      
+      .animate-spin-custom {
+        animation: spin 1s linear infinite;
+      }
+      
+      .water-fill-button {
+        position: relative;
+        background-color: rgb(59, 130, 246) !important;
+        box-shadow: inset 0 -0px 0 0 rgba(100, 200, 255, 0.5) !important;
+        transition: box-shadow 0.3s ease !important;
+      }
+      
+      .water-fill-button:hover {
+        background-color: rgb(59, 130, 246) !important;
+      }
+      
+      .water-fill-button span {
+        position: relative;
+        z-index: 1;
+      }
+    </style>
+</head>
+
+<body>
+    <script src="https://js.puter.com/v2/"></script>
+    <script>
+        const questions = [
+            "Why did the chicken cross the road?",
+            "What is the meaning of life?",
+            "How do airplanes stay in the air?",
+            "What is the capital of France?",
+            "Why is the sky blue?",
+            "What are no tall trees in water?",
+            "How does photosynthesis work?",
+            "What is the speed of light?",
+            "Why do we dream?",
+            "If space is a vacuum, how do satellites orbit the Earth?",
+            "How do they take off from moon after using so much fuel to get there?",
+        ];
+
+        const answersCache = {};
+        let autoShuffleTimer = null;
+        let timeRemaining = 10;
+        const AUTO_SHUFFLE_INTERVAL = 10; // seconds
+        let timerEnabled = true;
+        // Models
+        let supportedModels = [
+            { id: "gpt-5-nano", name: "GPT-5 Nano" },
+            { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5 (2025-10-01)" }
+        ];
+        let selectedModel = { id: "gpt-5-nano", name: "GPT-5 Nano" };
+
+        async function getSupportedModels() {
+            const models = await puter.ai.listModels();
+            console.log("Supported models:", models);
+            supportedModels = models;
+        }
+        function setAnswer(answer) {
+            document.getElementById("answer").innerHTML = answer;
+            document.getElementById("loading").classList.remove("show");
+            document.getElementById("loading").classList.add("hidden");
+            document.getElementById("answer").classList.remove("hidden");
+            document.getElementById("answer").classList.add("show");
+            resetAutoShuffle();
+        }
+
+        function clearAnswer() {
+            document.getElementById("loading").classList.remove("hidden");
+            document.getElementById("loading").classList.add("show");
+            document.getElementById("answer").classList.remove("show");
+            document.getElementById("answer").classList.add("hidden");
+            document.getElementById("answer").innerHTML = "";
+        }
+
+        function updateTimer() {
+            const fillPercent = ((AUTO_SHUFFLE_INTERVAL - timeRemaining) / AUTO_SHUFFLE_INTERVAL) * 100;
+            const button = document.getElementById("shuffle-btn");
+            const fillAmount = (fillPercent / 100) * 40;
+            button.style.setProperty('box-shadow', `inset 0 -${fillAmount}px 0 0 rgba(100, 200, 255, 0.5)`, 'important');
+            /* console.log(`Fill: ${fillPercent}%, fillAmount: ${fillAmount}px, timeRemaining: ${timeRemaining}s`); */
+        }
+
+        function resetAutoShuffle() {
+            if (autoShuffleTimer) clearInterval(autoShuffleTimer);
+            if (!timerEnabled) return;
+            timeRemaining = AUTO_SHUFFLE_INTERVAL;
+            updateTimer();
+            autoShuffleTimer = setInterval(() => {
+                timeRemaining--;
+                updateTimer();
+                if (timeRemaining <= 0) {
+                    clearInterval(autoShuffleTimer);
+                    shuffleQuestion();
+                }
+            }, 1000);
+        }
+
+        function sendQuestion(question) {
+            clearAnswer();
+            document.getElementById("question").innerHTML = question;
+            if (answersCache[question]) {
+                setAnswer(answersCache[question]);
+                return;
+            }
+            puter.ai.chat(question, {
+                model: selectedModel.id,
+            }).then(response => {
+                answersCache[question] = response;
+                setAnswer(response);
+            });
+        }
+
+        /*puter.print*/
+        function shuffleQuestion() {
+            clearAnswer();
+            const randomIndex = Math.floor(Math.random() * questions.length);
+            const question = questions[randomIndex];
+            sendQuestion(question);
+        }
+
+        function disableAutoShuffle() {
+            timerEnabled = !timerEnabled;
+            const timerButton = document.getElementById("timer-toggle");
+            if (timerEnabled) {
+                timerButton.textContent = "⏰";
+                resetAutoShuffle();
+            } else {
+                timerButton.textContent = "⏱️";
+                if (autoShuffleTimer) clearInterval(autoShuffleTimer);
+                const button = document.getElementById("shuffle-btn");
+                button.style.setProperty('box-shadow', `inset 0 -0px 0 0 rgba(100, 200, 255, 0.5)`, 'important');
+            }
+        }
+
+        function downloadQuestionsFromGithub() {
+            return fetch('https://raw.githubusercontent.com/puter-ai/puter/main/questions.txt')
+                .then(response => response.text())
+                .then(text => text.split('\n').filter(line => line.trim() !== ''));
+        }
+
+        function downloadAndAddQuestions() {
+            downloadQuestionsFromGithub().then(newQuestions => {
+                questions.push(...newQuestions);
+                console.log(`Downloaded ${newQuestions.length} questions from GitHub.`);
+                document.getElementById('github-path').classList.toggle('hidden')
+
+            }).catch(error => {
+                console.error('Error downloading questions:', error);
+            });
+        }
+
+        function showGithubPathInput() {
+            document.getElementById('github-path').classList.toggle('hidden');
+            document.getElementById("question-list-toggle").classList.toggle('hidden');
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            shuffleQuestion();
+            /* getSupportedModels(); */
+        });
+    </script>
+    <!-- 
+        Centered card with a question, loading spinner, and answer, add a button in card to shuffle question
+    Simple dark mode with Tailwind CSS, and a custom spinner animation using Tailwind's utility classes.
+    This card should auto grow and shrink based on the content of the question and answer, and should be responsive to different screen sizes.
+
+    -->
+    <!-- Small nav bar on top right, with theme toggle, question list drawer -->
+
+    <nav
+        class="fixed top-0 left-0 right-0 z-50 flex items-center justify-end gap-3 p-4 bg-gray-100 dark:bg-gray-900 shadow-md">
+        <button id="shuffle-btn" onclick="shuffleQuestion()"
+            class="water-fill-button text-gray-800 dark:text-gray-200 font-bold py-1 px-3 rounded">
+            <span>Shuffle Question</span>
+        </button>
+        <button id="theme-toggle"
+            class="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600">
+            🔆
+        </button>
+        <button id="timer-toggle"
+            class="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600"
+            onclick="disableAutoShuffle()">
+            ⏰
+        </button>
+        <button id="question-dropdown-toggle"
+            class="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600"
+            onclick="showGithubPathInput()">
+            🔗
+        </button>
+        <!-- Text box to take github path, default hidden, shows on click of questions dropdown -->
+        <input type="text" id="github-path" placeholder="Enter GitHub path"
+            class="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-1 placeholder:text-gray-500 dark:placeholder:text-gray-400 border border-gray-400 dark:border-gray-600 rounded px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hidden" />
+
+        <button id="question-list-toggle"
+            class="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600 hidden"
+            onclick="downloadAndAddQuestions()">
+            Download
+        </button>
+    </nav>
+
+    <div class="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4 pt-20">
+        <div class="bg-white p-4 rounded-lg shadow-lg w-full max-w-md">
+            <h3 id="question" class="text-xl font-bold mb-4 text-center">
+            </h3>
+            <div id="loading" class="flex justify-center mb-4 show">
+                <div class="animate-spin-custom rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+            </div>
+            <div id="answer" class="hidden text-gray-700 mb-4 text-center"></div>
+            <!--button id="shuffle-btn" onclick="shuffleQuestion()"
+                class="water-fill-button w-full text-white font-bold py-2 px-4 rounded">
+                <span>Shuffle Question</span>
+            </button-->
+        </div>
+
+
+</body>
+
+</html>
