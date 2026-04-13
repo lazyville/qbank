@@ -288,6 +288,88 @@
         .dark .status-bar { color: #5a5a55; }
         .status-bar.visible { opacity: 1; }
 
+        /* ── Banks panel ───────────────────────────────── */
+        .banks-panel {
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 272px;
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.1);
+            padding: 12px 14px;
+            z-index: 200;
+            animation: panel-in 0.2s cubic-bezier(0.16,1,0.3,1) forwards;
+        }
+        .dark .banks-panel {
+            background: #1b1b19;
+            border-color: rgba(255,255,255,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.5);
+        }
+        .banks-panel.open { display: flex; }
+
+        .banks-section-label {
+            font-size: 9px; font-weight: 500;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            color: #b0aaa2; margin-bottom: 2px;
+        }
+        .dark .banks-section-label { color: #5a5a55; }
+
+        .bank-row {
+            display: flex; align-items: center;
+            justify-content: space-between;
+            padding: 4px 0;
+        }
+        .bank-name {
+            font-size: 12px; font-weight: 400;
+            color: #374151;
+        }
+        .dark .bank-name { color: #d1d5db; }
+        .bank-actions { display: flex; gap: 4px; }
+
+        .bank-action {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 10.5px; font-weight: 500;
+            padding: 2px 8px; border-radius: 5px;
+            cursor: pointer; border: none;
+            transition: opacity 0.15s;
+        }
+        .bank-action:hover { opacity: 0.8; }
+        .bank-action.merge   { background: rgba(16,185,129,0.12); color: #059669; }
+        .bank-action.replace { background: rgba(245,158,11,0.12);  color: #d97706; }
+        .dark .bank-action.merge   { background: rgba(16,185,129,0.15); color: #34d399; }
+        .dark .bank-action.replace { background: rgba(245,158,11,0.15);  color: #fbbf24; }
+
+        .banks-divider {
+            height: 1px; background: rgba(0,0,0,0.06);
+            margin: 4px 0;
+        }
+        .dark .banks-divider { background: rgba(255,255,255,0.06); }
+
+        .banks-url-row {
+            display: flex; gap: 4px; align-items: center;
+        }
+        .banks-input {
+            flex: 1; height: 28px;
+            font-size: 11.5px; font-family: 'DM Sans', sans-serif;
+            padding: 0 8px; border-radius: 6px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: rgba(0,0,0,0.03);
+            color: #374151;
+            outline: none; transition: border-color 0.15s;
+        }
+        .dark .banks-input {
+            border-color: rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: #d1d5db;
+        }
+        .banks-input::placeholder { color: #9ca3af; }
+        .banks-input:focus { border-color: #3b82f6; }
+
         /* ── Timer settings panel ──────────────────────── */
         .timer-panel {
             display: none;
@@ -599,41 +681,64 @@
             }
         });
 
-        function downloadQuestionsFromGithub() {
-            return fetch(document.getElementById('github-path').value)
-                .then(response => response.text())
-                .then(text => text.split('\n').filter(line => line.trim() !== ''));
+        const BANKS = [
+            { name: '🔬 Science',    file: 'banks/science.txt' },
+            { name: '🧠 Philosophy', file: 'banks/philosophy.txt' },
+            { name: '🌀 Curious',    file: 'banks/curious.txt' },
+            { name: '💻 Tech',       file: 'banks/tech.txt' },
+        ];
+
+        function fetchQuestionsFromUrl(url) {
+            return fetch(url)
+                .then(r => r.text())
+                .then(text => text.split('\n').map(l => l.trim()).filter(Boolean));
         }
 
-        function mergeQuestions() {
-            downloadQuestionsFromGithub().then(newQuestions => {
-                const before = questions.length;
-                const fresh = newQuestions.filter(q => !questions.includes(q));
-                questions.push(...fresh);
-                toggleGithubPathInput();
-                setStatus(`+${fresh.length} added · ${questions.length} total`);
-            }).catch(() => setStatus('Failed to load questions'));
+        function applyMerge(newQuestions) {
+            const fresh = newQuestions.filter(q => !questions.includes(q));
+            questions.push(...fresh);
+            setStatus(`+${fresh.length} added · ${questions.length} total`);
         }
 
-        function replaceQuestions() {
-            downloadQuestionsFromGithub().then(newQuestions => {
-                questions.length = 0;
-                questions.push(...newQuestions);
-                nextQuestion = null;
-                toggleGithubPathInput();
-                setStatus(`Replaced · ${questions.length} questions`);
-                shuffleQuestion();
-            }).catch(() => setStatus('Failed to load questions'));
+        function applyReplace(newQuestions) {
+            questions.length = 0;
+            questions.push(...newQuestions);
+            nextQuestion = null;
+            setStatus(`Replaced · ${questions.length} questions`);
+            shuffleQuestion();
         }
 
-        function toggleGithubPathInput() {
-            document.getElementById('github-path').classList.toggle('hidden');
-            const merge = document.getElementById("btn-merge");
-            const replace = document.getElementById("btn-replace");
-            const show = merge.style.display === 'none' || merge.style.display === '';
-            merge.style.display = show ? 'flex' : 'none';
-            replace.style.display = show ? 'flex' : 'none';
+        function loadBank(file, mode) {
+            fetchQuestionsFromUrl(file)
+                .then(qs => { mode === 'replace' ? applyReplace(qs) : applyMerge(qs); closeBanksPanel(); })
+                .catch(() => setStatus('Failed to load bank'));
         }
+
+        function mergeFromInput() {
+            fetchQuestionsFromUrl(document.getElementById('github-path').value)
+                .then(qs => { applyMerge(qs); closeBanksPanel(); })
+                .catch(() => setStatus('Failed to load questions'));
+        }
+
+        function replaceFromInput() {
+            fetchQuestionsFromUrl(document.getElementById('github-path').value)
+                .then(qs => { applyReplace(qs); closeBanksPanel(); })
+                .catch(() => setStatus('Failed to load questions'));
+        }
+
+        function toggleBanksPanel() {
+            const panel = document.getElementById("banks-panel");
+            panel.classList.toggle("open");
+        }
+
+        function closeBanksPanel() {
+            document.getElementById("banks-panel").classList.remove("open");
+        }
+
+        document.addEventListener("click", function(e) {
+            const wrapper = document.getElementById("banks-wrapper");
+            if (wrapper && !wrapper.contains(e.target)) closeBanksPanel();
+        });
 
         document.addEventListener("DOMContentLoaded", function () {
             // Theme toggle
@@ -646,6 +751,16 @@
             });
 
             document.getElementById("share-btn").innerHTML = shareSvg();
+
+            // Render built-in bank rows
+            document.getElementById("banks-list").innerHTML = BANKS.map(b => `
+                <div class="bank-row">
+                    <span class="bank-name">${b.name}</span>
+                    <div class="bank-actions">
+                        <button class="bank-action merge"   onclick="loadBank('${b.file}','merge')">Merge</button>
+                        <button class="bank-action replace" onclick="loadBank('${b.file}','replace')">Replace</button>
+                    </div>
+                </div>`).join('');
 
             const sharedQ = new URLSearchParams(location.search).get('question');
             if (sharedQ) {
@@ -706,25 +821,21 @@
             </div>
         </div>
 
-        <button id="question-dropdown-toggle" class="nav-icon-btn" onclick="toggleGithubPathInput()">🔗</button>
-
-        <input type="text" id="github-path" placeholder="Paste raw GitHub URL…"
-            class="hidden text-sm bg-white dark:bg-[#1b1b19] text-gray-800 dark:text-gray-200
-                   placeholder:text-gray-400 dark:placeholder:text-gray-600
-                   border border-gray-200 dark:border-gray-700 rounded-lg
-                   px-3 py-1.5 h-8 w-44
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-
-        <button id="btn-merge" onclick="mergeQuestions()"
-            style="display:none"
-            class="nav-text-btn text-emerald-600 dark:text-emerald-400">
-            Merge
-        </button>
-        <button id="btn-replace" onclick="replaceQuestions()"
-            style="display:none"
-            class="nav-text-btn text-orange-500 dark:text-orange-400">
-            Replace
-        </button>
+        <!-- Banks panel -->
+        <div id="banks-wrapper" style="position:relative">
+            <button id="question-dropdown-toggle" class="nav-icon-btn" onclick="toggleBanksPanel()">🔗</button>
+            <div id="banks-panel" class="banks-panel">
+                <span class="banks-section-label">Built-in Banks</span>
+                <div id="banks-list"></div>
+                <div class="banks-divider"></div>
+                <span class="banks-section-label">Custom URL</span>
+                <div class="banks-url-row">
+                    <input type="text" id="github-path" class="banks-input" placeholder="Paste raw URL…"/>
+                    <button class="bank-action merge"   onclick="mergeFromInput()">Merge</button>
+                    <button class="bank-action replace" onclick="replaceFromInput()">Replace</button>
+                </div>
+            </div>
+        </div>
     </nav>
 
     <!-- Main -->

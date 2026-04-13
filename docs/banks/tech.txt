@@ -1,0 +1,20 @@
+How does quantum entanglement work and could it enable faster-than-light communication?
+What would happen to civilization if we developed true artificial general intelligence tomorrow?
+How does a transformer model actually process and understand language?
+Could we ever back up a human consciousness to a computer?
+Why is it so hard to make robots walk as naturally as humans?
+How close are we to reversing biological aging?
+What would a post-scarcity economy actually look like?
+How does CRISPR find and cut the exact right gene among billions?
+Could we realistically build a Dyson Sphere around the Sun?
+Why is fusion power always said to be thirty years away?
+What are the actual risks of a global internet outage?
+If Moore's Law ends, what comes next for computing?
+How does a GPS receiver know its location to within a meter?
+Why is it fundamentally hard to prove a program will not crash?
+What would the internet look like if it were redesigned from scratch today?
+How do noise-cancelling headphones know which sound to remove?
+Why can machine learning models be confidently wrong?
+What would happen if every password in the world was leaked at once?
+How does end-to-end encryption actually keep messages private?
+Why do computers still struggle with common sense that toddlers have?
