@@ -4,38 +4,360 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.13.0/lottie.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style type="text/tailwindcss">
-        @theme {
-        --color-clifford: #da373d;
-      }
-      
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
+        /* Make dark: utilities follow .dark class, not prefers-color-scheme */
+        @custom-variant dark (&:where(.dark, .dark *));
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
-      }
-      
-      .animate-spin-custom {
-        animation: spin 1s linear infinite;
-      }
-      
-      .water-fill-button {
-        position: relative;
-        background-color: rgb(59, 130, 246) !important;
-        box-shadow: inset 0 -0px 0 0 rgba(100, 200, 255, 0.5) !important;
-        transition: box-shadow 0.3s ease !important;
-      }
-      
-      .water-fill-button:hover {
-        background-color: rgb(59, 130, 246) !important;
-      }
-      
-      .water-fill-button span {
-        position: relative;
-        z-index: 1;
-      }
+
+        @keyframes pulse-dot {
+            0%, 80%, 100% { transform: scale(0.55); opacity: 0.25; }
+            40%            { transform: scale(1);    opacity: 0.8;  }
+        }
+
+        @keyframes fade-up {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0);   }
+        }
+
+        @keyframes question-in {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0);   }
+        }
+
+        @keyframes panel-in {
+            from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0)    scale(1);    }
+        }
+
+        /* ── Fonts ─────────────────────────────────────── */
+        body { font-family: 'DM Sans', sans-serif; }
+        .question-font { font-family: 'Fraunces', Georgia, serif; }
+
+        /* ── Water-fill shuffle button ─────────────────── */
+        .water-fill-button {
+            position: relative;
+            background-color: #3b82f6 !important;
+            box-shadow: inset 0 -0px 0 0 rgba(100, 200, 255, 0.5) !important;
+            transition: box-shadow 0.3s ease !important;
+        }
+        .water-fill-button:hover { background-color: #3b82f6 !important; }
+        .water-fill-button span  { position: relative; z-index: 1; }
+
+        /* ── Card ─────────────────────────────────────── */
+        .qcard {
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.07);
+            box-shadow:
+                0 1px 2px  rgba(0,0,0,0.04),
+                0 4px 12px rgba(0,0,0,0.05),
+                0 20px 48px rgba(0,0,0,0.07);
+            width: fit-content;
+            min-width: min(90vw, 300px);
+            max-width: min(90vw, 560px);
+        }
+        .dark .qcard {
+            background: #1b1b19;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow:
+                0 1px 2px  rgba(0,0,0,0.3),
+                0 4px 12px rgba(0,0,0,0.4),
+                0 20px 48px rgba(0,0,0,0.5);
+        }
+
+        /* ── Divider ───────────────────────────────────── */
+        .qdivider {
+            height: 1px;
+            background: rgba(0,0,0,0.07);
+            margin: 1.5rem 0;
+        }
+        .dark .qdivider { background: rgba(255,255,255,0.07); }
+
+        /* ── Loading dots ──────────────────────────────── */
+        .loading-dots {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem 0;
+        }
+        .loading-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #9ca3af;
+            animation: pulse-dot 1.4s ease-in-out infinite;
+        }
+        .loading-dot:nth-child(2) { animation-delay: 0.18s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.36s; }
+
+        /* ── Show/hide states ──────────────────────────── */
+        #loading.show   { display: flex; }
+        #loading.hidden { display: none; }
+
+        #answer.show {
+            display: block;
+            animation: fade-up 0.45s cubic-bezier(0.16,1,0.3,1) forwards;
+        }
+        #answer.hidden { display: none; }
+
+        /* ── Share button ──────────────────────────────── */
+        .share-btn {
+            color: #c8c2ba;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 3px;
+            border-radius: 5px;
+            display: flex; align-items: center; justify-content: center;
+            transition: color 0.15s, background 0.15s;
+            flex-shrink: 0;
+        }
+        .dark .share-btn { color: #4a4a45; }
+        .share-btn:hover { color: #6b7280; background: rgba(0,0,0,0.05); }
+        .dark .share-btn:hover { color: #9ca3af; background: rgba(255,255,255,0.06); }
+        .share-btn.copied { color: #10b981 !important; }
+
+        /* ── Expand toggle ─────────────────────────────── */
+        .expand-btn {
+            display: none;
+            align-items: center;
+            gap: 4px;
+            margin-top: 12px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #c8c2ba;
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+        .dark .expand-btn { color: #4a4a45; }
+        .expand-btn:hover { color: #6b7280; }
+        .dark .expand-btn:hover { color: #9ca3af; }
+
+        /* ── Expanded answer section ───────────────────── */
+        @keyframes expand-in {
+            from { opacity: 0; transform: translateY(5px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .expanded-section {
+            animation: expand-in 0.3s cubic-bezier(0.16,1,0.3,1) forwards;
+        }
+        .expanded-eyebrow {
+            font-size: 9px;
+            font-weight: 500;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #8b5cf6;
+            margin-bottom: 8px;
+        }
+        .dark .expanded-eyebrow { color: #7c3aed; }
+
+        /* ── Question animation ────────────────────────── */
+        .question-animate {
+            animation: question-in 0.35s cubic-bezier(0.16,1,0.3,1) forwards;
+        }
+
+        /* ── Eyebrow label ─────────────────────────────── */
+        .eyebrow {
+            font-size: 10px;
+            font-weight: 500;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #b0aaa2;
+        }
+        .dark .eyebrow { color: #5a5a55; }
+
+        /* ── Nav ───────────────────────────────────────── */
+        .qnav {
+            background: rgba(246, 244, 240, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+        }
+        .dark .qnav {
+            background: rgba(15, 15, 14, 0.88);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .nav-icon-btn {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+            background: rgba(0,0,0,0.05);
+            transition: background 0.15s;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .dark .nav-icon-btn          { background: rgba(255,255,255,0.07); }
+        .nav-icon-btn:hover          { background: rgba(0,0,0,0.1); }
+        .dark .nav-icon-btn:hover    { background: rgba(255,255,255,0.12); }
+        .nav-icon-btn.active         { background: rgba(0,0,0,0.1); }
+        .dark .nav-icon-btn.active   { background: rgba(255,255,255,0.12); }
+
+        /* text-labeled action buttons — no fixed width */
+        .nav-text-btn {
+            height: 32px;
+            padding: 0 11px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px; font-weight: 500;
+            background: rgba(0,0,0,0.05);
+            transition: background 0.15s;
+            cursor: pointer;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .dark .nav-text-btn       { background: rgba(255,255,255,0.07); }
+        .nav-text-btn:hover       { background: rgba(0,0,0,0.1); }
+        .dark .nav-text-btn:hover { background: rgba(255,255,255,0.12); }
+
+        .shuffle-btn {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12.5px;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            height: 32px;
+            padding: 0 14px;
+            border-radius: 8px;
+            max-width: 200px;
+        }
+        .shuffle-btn span {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* ── Logo ─────────────────────────────────────── */
+        .logo {
+            display: flex; align-items: center; gap: 3px;
+            flex-shrink: 0; text-decoration: none;
+            position: relative;
+        }
+        .logo-icon { display: block; }
+        .logo-q1   { color: #3b82f6; }
+        .logo-q2   { color: #8b5cf6; }
+
+        /* tooltip */
+        .logo::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            top: calc(100% + 7px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a18;
+            color: rgba(255,255,255,0.88);
+            font-size: 10.5px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 400;
+            letter-spacing: 0.04em;
+            padding: 3px 8px;
+            border-radius: 5px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s;
+        }
+        .dark .logo::after { background: #2e2e2c; }
+        .logo:hover::after { opacity: 1; }
+
+        /* ── Status bar ────────────────────────────────── */
+        .status-bar {
+            font-size: 11px;
+            font-weight: 400;
+            color: #b0aaa2;
+            letter-spacing: 0.02em;
+            opacity: 0;
+            transition: opacity 0.4s;
+            white-space: nowrap;
+        }
+        .dark .status-bar { color: #5a5a55; }
+        .status-bar.visible { opacity: 1; }
+
+        /* ── Timer settings panel ──────────────────────── */
+        .timer-panel {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: #ffffff;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 12px;
+            box-shadow:
+                0 2px 8px  rgba(0,0,0,0.06),
+                0 8px 24px rgba(0,0,0,0.1);
+            padding: 12px 16px;
+            z-index: 200;
+            white-space: nowrap;
+            animation: panel-in 0.2s cubic-bezier(0.16,1,0.3,1) forwards;
+        }
+        .dark .timer-panel {
+            background: #1b1b19;
+            border-color: rgba(255,255,255,0.08);
+            box-shadow:
+                0 2px 8px  rgba(0,0,0,0.3),
+                0 8px 24px rgba(0,0,0,0.5);
+        }
+        .timer-panel.open { display: flex; }
+
+        .timer-panel-label {
+            font-size: 9px;
+            font-weight: 500;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #b0aaa2;
+        }
+        .dark .timer-panel-label { color: #5a5a55; }
+
+        .timer-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .timer-adj-btn {
+            width: 26px; height: 26px;
+            border-radius: 7px;
+            background: rgba(0,0,0,0.06);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px;
+            line-height: 1;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-weight: 300;
+            color: #374151;
+            user-select: none;
+        }
+        .dark .timer-adj-btn          { background: rgba(255,255,255,0.08); color: #d1d5db; }
+        .timer-adj-btn:hover          { background: rgba(0,0,0,0.12); }
+        .dark .timer-adj-btn:hover    { background: rgba(255,255,255,0.14); }
+        .timer-adj-btn:active         { transform: scale(0.92); }
+
+        #timer-interval-display {
+            font-size: 15px;
+            font-weight: 500;
+            color: #111110;
+            min-width: 38px;
+            text-align: center;
+        }
+        .dark #timer-interval-display { color: #EDEDEB; }
     </style>
 </head>
 
@@ -56,10 +378,14 @@
         ];
 
         const answersCache = {};
+        const expandedCache = {};
         let autoShuffleTimer = null;
-        let timeRemaining = 10;
-        const AUTO_SHUFFLE_INTERVAL = 10; // seconds
-        let timerEnabled = true;
+        let AUTO_SHUFFLE_INTERVAL = 10; // seconds, mutable
+        let timeRemaining = AUTO_SHUFFLE_INTERVAL;
+        let timerPaused = false;
+        let nextQuestion = null; // pre-selected + pre-fetched
+        let currentRequestId = 0; // guards against stale AI responses
+
         // Models
         let supportedModels = [
             { id: "gpt-5-nano", name: "GPT-5 Nano" },
@@ -72,12 +398,18 @@
             console.log("Supported models:", models);
             supportedModels = models;
         }
+
         function setAnswer(answer) {
             document.getElementById("answer").innerHTML = answer;
             document.getElementById("loading").classList.remove("show");
             document.getElementById("loading").classList.add("hidden");
             document.getElementById("answer").classList.remove("hidden");
             document.getElementById("answer").classList.add("show");
+            // show expand button, reset expanded section
+            const expandBtn = document.getElementById("expand-btn");
+            expandBtn.style.display = 'flex';
+            expandBtn.innerHTML = '↓ &nbsp;Expand';
+            document.getElementById("expanded-section").style.display = 'none';
             resetAutoShuffle();
         }
 
@@ -87,19 +419,20 @@
             document.getElementById("answer").classList.remove("show");
             document.getElementById("answer").classList.add("hidden");
             document.getElementById("answer").innerHTML = "";
+            document.getElementById("expand-btn").style.display = 'none';
+            document.getElementById("expanded-section").style.display = 'none';
         }
 
         function updateTimer() {
             const fillPercent = ((AUTO_SHUFFLE_INTERVAL - timeRemaining) / AUTO_SHUFFLE_INTERVAL) * 100;
             const button = document.getElementById("shuffle-btn");
-            const fillAmount = (fillPercent / 100) * 40;
+            const fillAmount = (fillPercent / 100) * 32;
             button.style.setProperty('box-shadow', `inset 0 -${fillAmount}px 0 0 rgba(100, 200, 255, 0.5)`, 'important');
-            /* console.log(`Fill: ${fillPercent}%, fillAmount: ${fillAmount}px, timeRemaining: ${timeRemaining}s`); */
         }
 
         function resetAutoShuffle() {
             if (autoShuffleTimer) clearInterval(autoShuffleTimer);
-            if (!timerEnabled) return;
+            if (timerPaused) return;
             timeRemaining = AUTO_SHUFFLE_INTERVAL;
             updateTimer();
             autoShuffleTimer = setInterval(() => {
@@ -112,42 +445,159 @@
             }, 1000);
         }
 
+        function preloadNext(currentQuestion) {
+            let candidate;
+            do {
+                candidate = questions[Math.floor(Math.random() * questions.length)];
+            } while (candidate === currentQuestion && questions.length > 1);
+            nextQuestion = candidate;
+            updateShuffleBtn();
+            const q = candidate; // capture value — nextQuestion may change before promises resolve
+            if (!answersCache[q]) {
+                puter.ai.chat('Answer in 1-2 concise sentences: ' + q, { model: selectedModel.id })
+                    .then(response => { answersCache[q] = response; });
+            }
+            if (!expandedCache[q]) {
+                puter.ai.chat(q, { model: selectedModel.id })
+                    .then(response => { expandedCache[q] = response; });
+            }
+        }
+
+        function fetchExpanded(question) {
+            const content = document.getElementById("expanded-content");
+            const dots = document.getElementById("expanded-loading");
+            content.style.display = 'none';
+            content.innerHTML = '';
+            if (expandedCache[question]) {
+                dots.style.display = 'none';
+                content.innerHTML = expandedCache[question];
+                content.style.display = 'block';
+                return;
+            }
+            dots.style.display = 'flex';
+            puter.ai.chat(question, { model: selectedModel.id })
+                .then(response => {
+                    expandedCache[question] = response;
+                    // only show if user is still on this question
+                    if (document.getElementById("question").innerHTML === question) {
+                        dots.style.display = 'none';
+                        content.innerHTML = response;
+                        content.style.display = 'block';
+                    }
+                });
+        }
+
+        function toggleExpanded() {
+            const section = document.getElementById("expanded-section");
+            const btn = document.getElementById("expand-btn");
+            const question = document.getElementById("question").innerHTML;
+            if (section.style.display === 'none' || section.style.display === '') {
+                section.style.display = 'block';
+                btn.innerHTML = '↑ &nbsp;Collapse';
+                fetchExpanded(question);
+            } else {
+                section.style.display = 'none';
+                btn.innerHTML = '↓ &nbsp;Expand';
+            }
+        }
+
+        function updateShuffleBtn() {
+            document.getElementById("shuffle-label").textContent = nextQuestion || 'Shuffle';
+        }
+
+        function shareSvg() {
+            return `<svg width="13" height="13" viewBox="0 0 16 16" fill="none"
+                stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6.5 3.5l1.5-1.5a3 3 0 014.243 4.243l-2 2a3 3 0 01-4.243 0"/>
+                <path d="M9.5 12.5l-1.5 1.5a3 3 0 01-4.243-4.243l2-2a3 3 0 014.243 0"/></svg>`;
+        }
+
+        function shareQuestion() {
+            const question = document.getElementById("question").textContent;
+            const url = location.origin + location.pathname + '?question=' + encodeURIComponent(question);
+            const btn = document.getElementById("share-btn");
+            navigator.clipboard.writeText(url).then(() => {
+                btn.classList.add('copied');
+                btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="2 8 6 12 14 4"/></svg>`;
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = shareSvg();
+                }, 1600);
+            });
+        }
+
+        function setStatus(text) {
+            const el = document.getElementById("status-bar");
+            el.textContent = text;
+            el.classList.add("visible");
+        }
+
         function sendQuestion(question) {
             clearAnswer();
-            document.getElementById("question").innerHTML = question;
+            const requestId = ++currentRequestId;
+            const el = document.getElementById("question");
+            el.classList.remove("question-animate");
+            void el.offsetWidth;
+            el.innerHTML = question;
+            el.classList.add("question-animate");
+            // Start pre-loading the next answer in parallel
+            preloadNext(question);
             if (answersCache[question]) {
                 setAnswer(answersCache[question]);
                 return;
             }
-            puter.ai.chat(question, {
-                model: selectedModel.id,
-            }).then(response => {
-                answersCache[question] = response;
-                setAnswer(response);
-            });
+            puter.ai.chat('Answer in 1-2 concise sentences: ' + question, { model: selectedModel.id })
+                .then(response => {
+                    if (requestId !== currentRequestId) return; // discard stale response
+                    answersCache[question] = response;
+                    setAnswer(response);
+                });
         }
 
-        /*puter.print*/
         function shuffleQuestion() {
-            clearAnswer();
-            const randomIndex = Math.floor(Math.random() * questions.length);
-            const question = questions[randomIndex];
+            // Use pre-selected question if available, else pick random
+            const question = nextQuestion || questions[Math.floor(Math.random() * questions.length)];
+            nextQuestion = null;
             sendQuestion(question);
         }
 
-        function disableAutoShuffle() {
-            timerEnabled = !timerEnabled;
-            const timerButton = document.getElementById("timer-toggle");
-            if (timerEnabled) {
-                timerButton.textContent = "⏰";
-                resetAutoShuffle();
-            } else {
-                timerButton.textContent = "⏱️";
+        // ── Timer controls ──────────────────────────────
+        function toggleTimer() {
+            timerPaused = !timerPaused;
+            const btn = document.getElementById("timer-toggle");
+            const panel = document.getElementById("timer-settings");
+
+            if (timerPaused) {
                 if (autoShuffleTimer) clearInterval(autoShuffleTimer);
-                const button = document.getElementById("shuffle-btn");
-                button.style.setProperty('box-shadow', `inset 0 -0px 0 0 rgba(100, 200, 255, 0.5)`, 'important');
+                btn.textContent = "⏸";
+                btn.classList.add("active");
+                panel.classList.add("open");
+            } else {
+                btn.textContent = "⏰";
+                btn.classList.remove("active");
+                panel.classList.remove("open");
+                timeRemaining = AUTO_SHUFFLE_INTERVAL;
+                updateTimer();
+                resetAutoShuffle();
             }
         }
+
+        function adjustTimerInterval(delta) {
+            AUTO_SHUFFLE_INTERVAL = Math.max(5, Math.min(300, AUTO_SHUFFLE_INTERVAL + delta));
+            document.getElementById("timer-interval-display").textContent = AUTO_SHUFFLE_INTERVAL + 's';
+            timeRemaining = AUTO_SHUFFLE_INTERVAL;
+            updateTimer();
+        }
+
+        // Close timer panel on outside click
+        document.addEventListener("click", function (e) {
+            const wrapper = document.getElementById("timer-btn-wrapper");
+            if (timerPaused && !wrapper.contains(e.target)) {
+                toggleTimer();
+            }
+        });
 
         function downloadQuestionsFromGithub() {
             return fetch(document.getElementById('github-path').value)
@@ -155,80 +605,178 @@
                 .then(text => text.split('\n').filter(line => line.trim() !== ''));
         }
 
-        function downloadAndAddQuestions() {
+        function mergeQuestions() {
             downloadQuestionsFromGithub().then(newQuestions => {
-                questions.push(...newQuestions);
-                console.log(`Downloaded ${newQuestions.length} questions from GitHub.`);
+                const before = questions.length;
+                const fresh = newQuestions.filter(q => !questions.includes(q));
+                questions.push(...fresh);
                 toggleGithubPathInput();
+                setStatus(`+${fresh.length} added · ${questions.length} total`);
+            }).catch(() => setStatus('Failed to load questions'));
+        }
 
-            }).catch(error => {
-                console.error('Error downloading questions:', error);
-            });
+        function replaceQuestions() {
+            downloadQuestionsFromGithub().then(newQuestions => {
+                questions.length = 0;
+                questions.push(...newQuestions);
+                nextQuestion = null;
+                toggleGithubPathInput();
+                setStatus(`Replaced · ${questions.length} questions`);
+                shuffleQuestion();
+            }).catch(() => setStatus('Failed to load questions'));
         }
 
         function toggleGithubPathInput() {
             document.getElementById('github-path').classList.toggle('hidden');
-            document.getElementById("question-list-toggle").classList.toggle('hidden');
+            const merge = document.getElementById("btn-merge");
+            const replace = document.getElementById("btn-replace");
+            const show = merge.style.display === 'none' || merge.style.display === '';
+            merge.style.display = show ? 'flex' : 'none';
+            replace.style.display = show ? 'flex' : 'none';
         }
 
         document.addEventListener("DOMContentLoaded", function () {
-            shuffleQuestion();
+            // Theme toggle
+            const html = document.documentElement;
+            const themeBtn = document.getElementById("theme-toggle");
+            if (window.matchMedia('(prefers-color-scheme: dark)').matches) html.classList.add('dark');
+            themeBtn.addEventListener('click', () => {
+                html.classList.toggle('dark');
+                themeBtn.textContent = html.classList.contains('dark') ? '🔆' : '🌙';
+            });
+
+            document.getElementById("share-btn").innerHTML = shareSvg();
+
+            const sharedQ = new URLSearchParams(location.search).get('question');
+            if (sharedQ) {
+                sendQuestion(sharedQ);
+            } else {
+                shuffleQuestion();
+            }
             /* getSupportedModels(); */
         });
     </script>
-    <!-- 
-        Centered card with a question, loading spinner, and answer, add a button in card to shuffle question
-    Simple dark mode with Tailwind CSS, and a custom spinner animation using Tailwind's utility classes.
-    This card should auto grow and shrink based on the content of the question and answer, and should be responsive to different screen sizes.
 
-    -->
-    <!-- Small nav bar on top right, with theme toggle, question list drawer -->
+    <!-- Nav -->
+    <nav class="qnav fixed top-0 left-0 right-0 z-50 flex items-center gap-3 px-5 py-3">
 
-    <nav
-        class="fixed top-0 left-0 right-0 z-50 flex items-center justify-end gap-3 p-4 bg-gray-100 dark:bg-gray-900 shadow-md">
+        <!-- Logo -->
+        <a class="logo" href="#" data-tooltip="QuestionQueue">
+            <!-- Q1: blue, tail right -->
+            <svg class="logo-icon logo-q1" width="15" height="18" viewBox="0 0 5 6"
+                 xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" fill="currentColor">
+                <rect x="1" y="0" width="3" height="1"/>
+                <rect x="0" y="1" width="1" height="3"/>
+                <rect x="4" y="1" width="1" height="3"/>
+                <rect x="2" y="3" width="2" height="1"/>
+                <rect x="1" y="4" width="3" height="1"/>
+                <rect x="3" y="5" width="2" height="1"/>
+            </svg>
+            <!-- Q2: violet, tail mirrored left -->
+            <svg class="logo-icon logo-q2" width="15" height="18" viewBox="0 0 5 6"
+                 xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" fill="currentColor">
+                <rect x="1" y="0" width="3" height="1"/>
+                <rect x="0" y="1" width="1" height="3"/>
+                <rect x="4" y="1" width="1" height="3"/>
+                <rect x="1" y="3" width="2" height="1"/>
+                <rect x="1" y="4" width="3" height="1"/>
+                <rect x="0" y="5" width="2" height="1"/>
+            </svg>
+        </a>
+
+        <span id="status-bar" class="status-bar mr-auto"></span>
+
         <button id="shuffle-btn" onclick="shuffleQuestion()"
-            class="water-fill-button text-gray-800 dark:text-gray-200 font-bold py-1 px-3 rounded">
-            <span>Shuffle Question</span>
+            class="water-fill-button shuffle-btn text-white font-medium">
+            <span id="shuffle-label">Shuffle</span>
         </button>
-        <button id="theme-toggle"
-            class="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600">
-            🔆
-        </button>
-        <button id="timer-toggle"
-            class="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600"
-            onclick="disableAutoShuffle()">
-            ⏰
-        </button>
-        <button id="question-dropdown-toggle"
-            class="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600"
-            onclick="toggleGithubPathInput()">
-            🔗
-        </button>
-        <!-- Text box to take github path, default hidden, shows on click of questions dropdown -->
-        <input type="text" id="github-path" placeholder="Enter GitHub path"
-            class="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 py-1 placeholder:text-gray-500 dark:placeholder:text-gray-400 border border-gray-400 dark:border-gray-600 rounded px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hidden" />
 
-        <button id="question-list-toggle"
-            class="bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-3 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600 hidden"
-            onclick="downloadAndAddQuestions()">
-            Download
+        <button id="theme-toggle" class="nav-icon-btn">🔆</button>
+
+        <!-- Timer button + settings panel -->
+        <div id="timer-btn-wrapper" style="position: relative">
+            <button id="timer-toggle" class="nav-icon-btn" onclick="toggleTimer()">⏰</button>
+            <div id="timer-settings" class="timer-panel">
+                <span class="timer-panel-label">auto-shuffle</span>
+                <div class="timer-controls">
+                    <button class="timer-adj-btn" onclick="adjustTimerInterval(-5)">−</button>
+                    <span id="timer-interval-display">10s</span>
+                    <button class="timer-adj-btn" onclick="adjustTimerInterval(5)">+</button>
+                </div>
+            </div>
+        </div>
+
+        <button id="question-dropdown-toggle" class="nav-icon-btn" onclick="toggleGithubPathInput()">🔗</button>
+
+        <input type="text" id="github-path" placeholder="Paste raw GitHub URL…"
+            class="hidden text-sm bg-white dark:bg-[#1b1b19] text-gray-800 dark:text-gray-200
+                   placeholder:text-gray-400 dark:placeholder:text-gray-600
+                   border border-gray-200 dark:border-gray-700 rounded-lg
+                   px-3 py-1.5 h-8 w-44
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+
+        <button id="btn-merge" onclick="mergeQuestions()"
+            style="display:none"
+            class="nav-text-btn text-emerald-600 dark:text-emerald-400">
+            Merge
+        </button>
+        <button id="btn-replace" onclick="replaceQuestions()"
+            style="display:none"
+            class="nav-text-btn text-orange-500 dark:text-orange-400">
+            Replace
         </button>
     </nav>
 
-    <div class="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4 pt-20">
-        <div class="bg-white p-4 rounded-lg shadow-lg w-full max-w-md">
-            <h3 id="question" class="text-xl font-bold mb-4 text-center">
-            </h3>
-            <div id="loading" class="flex justify-center mb-4 show">
-                <div class="animate-spin-custom rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
-            </div>
-            <div id="answer" class="hidden text-gray-700 mb-4 text-center"></div>
-            <!--button id="shuffle-btn" onclick="shuffleQuestion()"
-                class="water-fill-button w-full text-white font-bold py-2 px-4 rounded">
-                <span>Shuffle Question</span>
-            </button-->
-        </div>
+    <!-- Main -->
+    <div class="flex items-center justify-center min-h-screen px-4 pt-20
+                bg-[#F6F4F0] dark:bg-[#111110]">
 
+        <div class="qcard rounded-2xl px-8 py-7">
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <p class="eyebrow">Question</p>
+                <button id="share-btn" class="share-btn" onclick="shareQuestion()" title="Copy link"></button>
+            </div>
+
+            <h3 id="question"
+                class="question-font question-animate text-[1.45rem] leading-[1.45] font-semibold
+                       text-gray-900 dark:text-[#EDEDEB] tracking-[-0.01em]">
+            </h3>
+
+            <div class="qdivider"></div>
+
+            <div id="loading" class="loading-dots show">
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+                <div class="loading-dot"></div>
+            </div>
+
+            <div id="answer"
+                class="hidden text-[0.925rem] leading-relaxed text-gray-500 dark:text-[#8A8A82]">
+            </div>
+
+            <!-- Expand toggle -->
+            <button id="expand-btn" class="expand-btn" style="display:none" onclick="toggleExpanded()">
+                ↓ &nbsp;Expand
+            </button>
+
+            <!-- Expanded answer -->
+            <div id="expanded-section" class="expanded-section" style="display:none">
+                <div class="qdivider"></div>
+                <p class="expanded-eyebrow">Detailed</p>
+                <div id="expanded-loading" class="loading-dots" style="display:none; padding: 0.75rem 0;">
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                </div>
+                <div id="expanded-content"
+                    class="text-[0.925rem] leading-relaxed text-gray-500 dark:text-[#8A8A82]"
+                    style="display:none">
+                </div>
+            </div>
+
+        </div>
+    </div>
 
 </body>
 
