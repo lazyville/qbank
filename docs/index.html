@@ -244,36 +244,32 @@
 
         /* ── Logo ─────────────────────────────────────── */
         .logo {
-            display: flex; align-items: center; gap: 3px;
+            display: flex; align-items: center; gap: 1px;
             flex-shrink: 0; text-decoration: none;
-            position: relative;
         }
-        .logo-icon { display: block; }
+        .logo-icon { display: block; flex-shrink: 0; }
         .logo-q1   { color: #3b82f6; }
         .logo-q2   { color: #8b5cf6; }
 
-        /* tooltip */
-        .logo::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            top: calc(100% + 7px);
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1a1a18;
-            color: rgba(255,255,255,0.88);
-            font-size: 10.5px;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 400;
-            letter-spacing: 0.04em;
-            padding: 3px 8px;
-            border-radius: 5px;
-            white-space: nowrap;
+        .logo-suffix {
+            display: inline-block;
+            max-width: 0;
+            overflow: hidden;
             opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.18s;
+            white-space: nowrap;
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            transition: max-width 0.4s cubic-bezier(0.16,1,0.3,1),
+                        opacity   0.25s ease;
         }
-        .dark .logo::after { background: #2e2e2c; }
-        .logo:hover::after { opacity: 1; }
+        .logo-suffix-1 { color: #3b82f6; padding-right: 4px; }
+        .logo-suffix-2 { color: #8b5cf6; }
+        .logo:hover .logo-suffix {
+            max-width: 90px;
+            opacity: 1;
+        }
 
         /* ── Status bar ────────────────────────────────── */
         .status-bar {
@@ -776,7 +772,7 @@
     <nav class="qnav fixed top-0 left-0 right-0 z-50 flex items-center gap-3 px-5 py-3">
 
         <!-- Logo -->
-        <a class="logo" href="#" data-tooltip="QuestionQueue">
+        <a class="logo" href="#">
             <!-- Q1: blue, tail right -->
             <svg class="logo-icon logo-q1" width="15" height="18" viewBox="0 0 5 6"
                  xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" fill="currentColor">
@@ -787,6 +783,7 @@
                 <rect x="1" y="4" width="3" height="1"/>
                 <rect x="3" y="5" width="2" height="1"/>
             </svg>
+            <span class="logo-suffix logo-suffix-1">uestion</span>
             <!-- Q2: violet, tail mirrored left -->
             <svg class="logo-icon logo-q2" width="15" height="18" viewBox="0 0 5 6"
                  xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" fill="currentColor">
@@ -797,6 +794,7 @@
                 <rect x="1" y="4" width="3" height="1"/>
                 <rect x="0" y="5" width="2" height="1"/>
             </svg>
+            <span class="logo-suffix logo-suffix-2">ueues</span>
         </a>
 
         <span id="status-bar" class="status-bar mr-auto"></span>
